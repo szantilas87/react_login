@@ -1,31 +1,46 @@
-const express = require("express")
+const express = require("express");
 const bodyParser = require('body-parser');
 const fakeUsers = require("./fake-users.json");
 const app = express();
-const port = 3000
+const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.post("/", (req, res) => {
+app.post("/logins", (req, res) => {
     const { username, password } = req.body || {};
-    var policy = "";
-    if(!username || !password) {
-        res.status(400).send("Bad request");
+    if (!username || !password) {
+        BadRequest(res);
     } else {
-        let user = fakeUsers[username];
-        if(!user) {
-            res.status(403).send("Login failed");
-            console.log("Login failed for unknown user", username);
-        } else {
-            if(user.password === password) {
-                res.status(201).send("Login succeeded");
-                console.log("Login succeeded for", username);
-            } else {
-                res.status(403).send("Login failed");
-                console.log("Login failed for known user", username);
-            }
-        }
+        ValidRequest(username, res, password);
     }
 });
+
+function ValidRequest(username, res, password) {
+    let user = fakeUsers[username];
+    if (!user) {
+        LoginFailed(res);
+        console.log("Login failed for unknown user", username);
+    }
+    else {
+        LoginKnownUser(user, password, res, username);
+    }
+}
+
+function LoginKnownUser(user, password, res, username) {
+    if (user.password === password) {
+        LoginSucceeded(res);
+        console.log("Login succeeded for", username);
+    }
+    else {
+        LoginFailed(res);
+        console.log("Login failed for known user", username);
+    }
+}
+
+const BadRequest = res => res.status(400).send("Bad request");
+const LoginSucceeded = res => res.status(201).send("Login succeeded");
+const LoginFailed = res => res.status(403).send("Login failed");
+
 app.listen(port, () => console.log(`Fake login server listening at http://localhost:${port}`));
+
